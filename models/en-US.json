@@ -1,0 +1,159 @@
+{
+   "interactionModel": {
+       "languageModel": {
+           "invocationName": "compassion",
+           "intents": [
+               {
+                   "name": "AMAZON.FallbackIntent",
+                   "samples": []
+               },
+               {
+                   "name": "AMAZON.CancelIntent",
+                   "samples": []
+               },
+               {
+                   "name": "AMAZON.HelpIntent",
+                   "samples": []
+               },
+               {
+                   "name": "AMAZON.StopIntent",
+                   "samples": []
+               },
+               {
+                   "name": "AskIntent",
+                   "slots": [
+                       {
+                           "name": "phrase",
+                           "type": "AMAZON.SearchQuery"
+                       }
+                   ],
+                   "samples": [
+                       "In the name of the lord {phrase}",
+                       "Jesus loves you {phrase}",
+                       "to say {phrase} ",
+                       "to translate {phrase} ",
+                       "ask how to say {phrase} ",
+                       "ask how to translate {phrase} ",
+                       "say {phrase} ",
+                       "translate {phrase} ",
+                       "how to say {phrase}",
+                       "how to translate {phrase}"
+                   ]
+               },
+               {
+                   "name": "RepeatIntent",
+                   "slots": [],
+                   "samples": [
+                       "ask to repeat",
+                       "ask him to repeat",
+                       "say again",
+                       "repeat"
+                   ]
+               },
+               {
+                   "name": "SetLanguage",
+                   "slots": [
+                       {
+                           "name": "language",
+                           "type": "language"
+                       }
+                   ],
+                   "samples": [
+                       "{language}",
+                       "set a language to {language}",
+                       " set the language to {language}",
+                       "set language to {language}"
+                   ]
+               },
+               {
+                   "name": "SendMessageIntent",
+                   "slots": [
+                       {
+                           "name": "child",
+                           "type": "AMAZON.US_FIRST_NAME"
+                       }
+                   ],
+                   "samples": [
+                       "i want to talk to {child}",
+                       "send message",
+                       "send message to {child}"
+                   ]
+               },
+               {
+                   "name": "ListenMessageIntent",
+                   "slots": [
+                       {
+                           "name": "user",
+                           "type": "AMAZON.US_FIRST_NAME"
+                       }
+                   ],
+                   "samples": [
+                       "listen messages from {user}",
+                       "listen message from {user}",
+                       "did my child send me a message",
+                       "do i have a message",
+                       "do i have new messages",
+                       "listen to my messages"
+                   ]
+               },
+               {
+                   "name": "AMAZON.YesIntent",
+                   "samples": []
+               },
+               {
+                   "name": "AMAZON.NoIntent",
+                   "samples": []
+               }
+           ],
+           "types": [
+               {
+                   "name": "language",
+                   "values": [
+                       {
+                           "id": "es",
+                           "name": {
+                               "value": "Spanish"
+                           }
+                       },
+                       {
+                           "id": "ru",
+                           "name": {
+                               "value": "Russian"
+                           }
+                       },
+                       {
+                           "id": "pt",
+                           "name": {
+                               "value": "Portuguese"
+                           }
+                       },
+                       {
+                           "id": "ja",
+                           "name": {
+                               "value": "Japanese"
+                           }
+                       },
+                       {
+                           "id": "it",
+                           "name": {
+                               "value": "Italian"
+                           }
+                       },
+                       {
+                           "id": "de",
+                           "name": {
+                               "value": "German"
+                           }
+                       },
+                       {
+                           "id": "fr",
+                           "name": {
+                               "value": "French"
+                           }
+                       }
+                   ]
+               }
+           ]
+       }
+   }
+}
