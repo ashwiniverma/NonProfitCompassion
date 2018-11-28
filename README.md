@@ -13,10 +13,8 @@ This project builds on Compassion's long-running pen-pal tradition that these sp
 - Create IAM roles
 -- Lambda: requires access to Alexa, Translate, Polly, and DynamoDB
 -- EC2: requires access to SNS API
-- Setup the AWS CLI
-[AWS CLI - Install and Configure](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-welcome.html)
-- Setup the Alexa Skills Kit CLI
-[Alexa Skills Kit Quick Start - Steps 1, 2, and 3](https://developer.amazon.com/docs/smapi/quick-start-alexa-skills-kit-command-line-interface.html)
+- [Setup the AWS CLI - Install and Configure](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-welcome.html)
+- [Alexa Skills Kit Quick Start - Steps 1, 2, and 3](https://developer.amazon.com/docs/smapi/quick-start-alexa-skills-kit-command-line-interface.html)
 
 ## Deployment Procedure
 - Deploy the integration service
@@ -30,8 +28,8 @@ cd moderation-service
 #TODO
 ```
 
-## Notes for Productionization
+## Notes for further development
 - The Lambda-based interaction service should scale relatively well.
-- The EC2-based moderation service can be converted to Lambda/API Gateway or adapted for ECS/EKS/Fargate.
+- The EC2-based moderation service can be converted to Lambda/API Gateway or adapted for deployment on ECS/EKS/Fargate.
 - The child/sponsor pairing we have stored in DynamoDB should be pulled from Compassion's existing system.
-- A log of all interaction should be stored for administrators to review if necessary.
+- In addition to the SNS-based notification, a log of all interaction should be stored for administrators to review if necessary.
