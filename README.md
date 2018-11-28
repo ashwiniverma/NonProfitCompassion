@@ -7,7 +7,7 @@ In addition to the holistic sponsorship of the child's food, clothing, education
 This project builds on Compassion's long-running pen-pal tradition that the sponsors and their sponsored children have shared. This new project's goal is for near-real time communication, translation, and moderation. 
 
 ## Architecture Diagram
-![](./architecture.png)
+![](https://raw.githubusercontent.com/ashwiniverma/NonProfitCompassion/master/architecture.png)
 
 ## Deployment Pre-requisites
 - Create IAM roles
