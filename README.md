@@ -11,8 +11,8 @@ This project builds on Compassion's long-running pen-pal tradition that the spon
 
 ## Deployment Pre-requisites
 - Create IAM roles
--- Lambda: access to Alexa, Translate, Polly, and DynamoDB
--- EC2: access to SNS API
+  - Lambda: access to Alexa, Translate, Polly, and DynamoDB
+  - EC2: access to SNS API
 - [Setup the AWS CLI - Install and Configure](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-welcome.html)
 - [Alexa Skills Kit Quick Start - Steps 1, 2, and 3](https://developer.amazon.com/docs/smapi/quick-start-alexa-skills-kit-command-line-interface.html)
 
