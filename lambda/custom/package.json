@@ -11,6 +11,8 @@
   "dependencies": {
     "ask-sdk-core": "^2.0.0",
     "ask-sdk-model": "^1.0.0",
-    "ask-sdk": "^2.0.9"
+    "ask-sdk": "^2.0.9",
+    "i18next": "^11.3.2",
+    "node-fetch": "^2.2.0"
   }
 }
