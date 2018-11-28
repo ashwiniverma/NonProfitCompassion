@@ -7,7 +7,7 @@ In addition to the holistic sponsorship of the child's food, clothing,  educatio
 This project builds on Compassion's long-running pen-pal tradition that these sponsors and their children share. The goal is for near-real time communication and translation. While other translation skills/apps exist for near-real time translation, this app has the unique value-add of protecting these children through moderation of the communication. A moderation webservice filters out harmful words and phrases before the message is delivered to the child. If certain thresholds are crossed, communication is ended and the moderation team is notified to review.
 
 ## Architecture Diagram
-![](./architecture.svg)
+![](./architecture.png)
 
 ## Deployment Pre-requisites
 - Create IAM roles
