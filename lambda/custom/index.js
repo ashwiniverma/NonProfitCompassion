@@ -3,19 +3,24 @@ const translate = new AWS.Translate();
 const polly = new AWS.Polly();
 const s3 = new AWS.S3();
 const alexa = require('ask-sdk');
+const apiservice = require('apiservice');
+const i18n = require('i18next');
 
 const messages = {
-  WELCOME: 'Greetings! Welcome to Compassion. I can help you send a message to your sponsored child. To begin, please say your name',
+  WELCOME: 'Greetings! Welcome to Compassion. I can help you send a messages to  your dear ones. To begin, please say your name',
   GREETINGS: 'Hello welcome back ',
   WHAT_DO_YOU_WANT: 'You can say, Send a Message or listen to my messages. What do you like to do?',
   REPROMPT_WHAT_DO_YOU_WANT: 'What do you like to do?',
+  REPROMPT_SAY_NAME : 'Please say your name.',
+  REPROMPT_RECIPIENT_NAME: 'Say the name of the person who you want to send the message.',
+  SEND_MESSAGE: 'Please say, Hello and then say your message. ',
   ERROR: 'Uh Oh. Looks like something went wrong',
   SUBSCRIPTION: 'Please say your subscription number to continue',
   NEXT: 'What do you want me to do next?',
-  REPEAT_NA: 'Looks like there is nothing to repeat. You can ask Language Teacher to say something in different languages. What do you want to ask?',
+  REPEAT_NA: 'Looks like there is nothing to repeat. You can ask Compassion to say something in different languages. What do you want to ask?',
   GOODBYE: 'Bye!',
   UNHANDLED: 'I don\'t know that but I\'m learning. Say "help" to hear the options, or ask something else.',
-  HELP: 'You can ask Language Teacher to say something in different languages. For example, you can say: "Ask Language Teacher to say Hello", or "Ask Language Teacher to repeat" to listen to the translation again. To set the language - just say: "Ask Language Teacher to set the language to Japanese". What do you want to do?'
+  HELP: 'You can ask Compassion to send and receive messages. For example, you can say: "Ask Compassion to send a message", or "Ask Compassion to listen to my messages" to listen to your messages'
 };
 
 const card_small = `https://s3.amazonaws.com/${process.env.BUCKET_PICS}/language/globe_small.png`;
@@ -38,7 +43,8 @@ const languages = {
   ja: 'Japanese',
   it: 'Italian',
   de: 'German',
-  fr: 'French'
+  fr: 'French',
+  en: 'English'
 };
 
 function doTranslate(text,language) {
@@ -127,21 +133,55 @@ function writeToS3(data,prefix) {
 
 }
 
+function getFromS3(prefix) {
+
+    let result = new Promise((resolve, reject) => {
+
+        var putParams = {
+            Bucket: `${process.env.BUCKET}`,
+            Key: `${prefix}/speech.mp3`,
+        };
+
+        console.log('Fetching to S3');
+
+        s3.getObject(putParams, function (putErr, putData) {
+            if (putErr) {
+                console.error(putErr);
+                return false;
+            } else {
+                return true;
+            }
+        });
+
+    });
+
+    return result;
+
+}
+
+//s3.getObject(params, function(err, data) { if (err) console.log(err, err.stack); // an error occurred else console.log(data); // successful response });
+
 const LaunchRequest = {
   canHandle(handlerInput) {
     return handlerInput.requestEnvelope.request.type === 'LaunchRequest';
   },
-  handle(handlerInput) {
+  async handle(handlerInput) {
 
       const attributesManager = handlerInput.attributesManager;
-      const persistenceAttributes = attributesManager.getPersistentAttributes();
+      let persistenceAttributes = attributesManager.getPersistentAttributes();
+      const sessionAttribute = attributesManager.getSessionAttributes();
+
       let message = messages.WELCOME;
       // if(persistenceAttributes.sponsorName != undefined) {
          //message = messages.GREETINGS + persistenceAttributes +"."+ messages.WHAT_DO_YOU_WANT ;
       // }
+      persistenceAttributes.STATE = "SENDER_NAME";
+      sessionAttribute.STATE = "SENDER_NAME";
+      attributesManager.setPersistentAttributes(persistenceAttributes);
+      await attributesManager.savePersistentAttributes();
 
     return handlerInput.responseBuilder.speak(message)
-      .reprompt("Please say your name.")
+      .reprompt(messages.REPROMPT_SAY_NAME)
       .getResponse();
   },
 };
@@ -151,12 +191,13 @@ const SendMessageIntent = {
         const { request } = handlerInput.requestEnvelope;
         return request.type === 'IntentRequest' && request.intent.name === 'SendMessageIntent';
     },
-    handle(handlerInput) {
+    async handle(handlerInput) {
         //TODO check dynamodb message array
         const attributesManager = handlerInput.attributesManager;
         const persistenceAttributes = attributesManager.getPersistentAttributes();
         const sessionAttribute = attributesManager.getSessionAttributes();
-        let childName ="";
+        let childName = undefined;
+
         if(handlerInput.requestEnvelope.request.intent.slots.childName != undefined) {
             childName  = handlerInput.requestEnvelope.request.intent.slots.childName.value;
         }
@@ -164,23 +205,25 @@ const SendMessageIntent = {
         if(sessionAttribute.CHILDNAME != undefined) {
             childName  = sessionAttribute.CHILDNAME;
         }
-        console.log(JSON.stringify(persistenceAttributes)   + "SendMessageIntent" + JSON.stringify(sessionAttribute));
+        console.log(JSON.stringify(persistenceAttributes)   + "SendMessageIntent" + JSON.stringify(sessionAttribute) + " Name " + childName);
 
-        let message = ""; let reprompt="Say the name of the person who you want to send the message. ";
+        let message = "";
+        let reprompt=messages.REPROMPT_RECIPIENT_NAME;//"Say the name of the person who you want to send the message. ";
 
-        if(sessionAttribute.currentUser.name != undefined && childName != "") {
-          message = "Please say, Jesus love you and then say your message. ";
+        if(sessionAttribute.currentUser != undefined && childName != undefined) {
+          message = "Please say, Hello and then say your message. ";
             persistenceAttributes.TochildName = childName;
 
-        } else if (sessionAttribute.currentUser.name != undefined && childName === "") {
-            message = "How would you like to send message to?";
-            let sponsorName = sessionAttribute.currentUser.name;
+        } else if (sessionAttribute.currentUser != undefined && childName === undefined) {
+            message = "Who would you like to send message to?";
+            let sponsorName = sessionAttribute.currentUser;
             persistenceAttributes.STATE = "GET_CHILD_NAME";
             sessionAttribute.STATE = "GET_CHILD_NAME";
         } else {
             message = "What is your name.";
             reprompt="Go ahead and say your name. ";
         }
+        attributesManager.setPersistentAttributes(persistenceAttributes);
         await attributesManager.savePersistentAttributes();
         return handlerInput.responseBuilder
             .speak(message)
@@ -194,28 +237,43 @@ const ListenMessageIntent = {
         const { request } = handlerInput.requestEnvelope;
         return request.type === 'IntentRequest' && request.intent.name === 'ListenMessageIntent';
     },
-    handle(handlerInput) {
-      //TODO check dynamodb message array
+    async handle(handlerInput) {
+        //TODO check dynamodb message array
         const attributesManager = handlerInput.attributesManager;
-        const persistenceAttributes = attributesManager.getPersistentAttributes();
+        const persistenceAttributes = await attributesManager.getPersistentAttributes();
         const sessionAttribute = attributesManager.getSessionAttributes();
-        console.log(JSON.stringify(persistenceAttributes)   + "ListenMessageIntent" + JSON.stringify(sessionAttribute));
+        console.log(JSON.stringify(persistenceAttributes) + "ListenMessageIntent" + JSON.stringify(sessionAttribute));
 
+        let count = 0;
 
         //TODO get the name and fetch the object from persistence
-        let name = sessionAttribute.currentUser.name;
+        // let messages = persistenceAttributes.receivedMessages;
+        // let name = sessionAttribute.currentUser;
+        let message;
+        let reprompt;
 
-        let message; let reprompt;
-        let count = 0; //TODO get the persistence count
+        const prefix = await handlerInput.attributesManager.getSessionAttributes().currentUser;
 
-        if (count > 1) {
-          message = "You have " + count  + "messages. Here's your first message " + count;//TODO get the message, and gt next messages
-        } else if (count === 1) {
-            message = "You have " + count  + "message. Here's your message " + count;//TODO get the message
+        if(getFromS3(prefix)) {
+           return handlerInput.responseBuilder
+                .speak(`<audio src="https://s3.amazonaws.com/${process.env.BUCKET}/${prefix}/speech.mp3"/>`)
+                .reprompt('What would you like to do next? You can say, Send a Message or listen to my messages.')
+                .getResponse()
         } else {
-          message = "You don't have any messages. Would you like to send a message";
+            message = "You don't have any messages. Would you like to send a message";
         }
-        reprompt = "You can say, send a message or stop to exist.";
+
+        // if(messages != undefined)
+        //     count = messages.count; //TODO get the persistence count
+        //
+        // if (count > 1) {
+        //     message = name + "You have " + count + "messages. Your first message is from " + messages[0].user+". " + messages[0].message +". ";
+        // } else if (count === 1) {
+        //     message = name + "You have " + count + "message. Your message is from " + messages[0].user+". " + messages[0].message +". ";
+        // } else {
+        //     message = "You don't have any messages. Would you like to send a message";
+        // }
+        reprompt = "You can say, send a message or stop to exit.";
         return handlerInput.responseBuilder
             .speak(message)
             .reprompt(reprompt)
@@ -260,19 +318,32 @@ const NameIntent = {
 
         console.log(JSON.stringify(persistenceAttributes)   + "NameIntent" + JSON.stringify(sessionAttribute) + " Name "+ name);
 
+        let message = messages.WHAT_DO_YOU_WANT;
+        let reprompt = messages.REPROMPT_WHAT_DO_YOU_WANT;
+
+        if(persistenceAttributes.STATE === "SENDER_NAME" || sessionAttribute.STATE === "SENDER_NAME") {
+            message = "Welcome " + name + ". " + message;
+        }
+
         if (sessionAttribute.STATE === "GET_CHILD_NAME") {
             sessionAttribute.CHILDNAME = name;
-            SendMessageIntent.handle(handlerInput);
+            console.log(JSON.stringify(persistenceAttributes)   + "NameIntent2" + persistenceAttributes.targetLanguage);
+            if (persistenceAttributes.targetLanguage === undefined) {
+                message = "Please say which language you want to send the message";
+                reprompt="To set the language - just say: \" Set the language to French, Spanish, Japanese, Russian, Portuguese, Italian, German\". What do you want to do? ";
+            } else {
+                SendMessageIntent.handle(handlerInput);
+            }
         } else {
 
-          sessionAttributes.currentUser.name = name;
+            sessionAttribute.currentUser = name;
 
           //TODO check and get the object if name is found then fetch from db and save in session or persist into db and then save to session
         }
 
         return handlerInput.responseBuilder
-            .speak(messages.WHAT_DO_YOU_WANT)
-            .reprompt(messages.REPROMPT_WHAT_DO_YOU_WANT)
+            .speak(message)
+            .reprompt(reprompt)
             .getResponse();
     },
 };
@@ -324,8 +395,8 @@ const SetLanguageIntent = {
       sessionAttributes.targetLanguage = currentIntent.slots.language.resolutions.resolutionsPerAuthority[0].values[0].value.id;
       attributesManager.setPersistentAttributes(sessionAttributes);
       await attributesManager.savePersistentAttributes();
-      response = `Ok, I set the language to ${language}. ` + messages.NEXT;
-      reprompt = messages.NEXT;
+      response = `Ok, I set the language to ${language}. ` + "Please say, Hello and then say your message. ";
+      reprompt = "Please say, hello and then say your message. ";
     }
 
     return handlerInput.responseBuilder
@@ -366,48 +437,68 @@ const AskIntentHandler = {
   async handle(handlerInput) {
 
     const attributesManager = handlerInput.attributesManager;
+    const persistanceAttributes = await attributesManager.getPersistentAttributes();
     const sessionAttributes = await attributesManager.getPersistentAttributes();
-    const phrase = handlerInput.requestEnvelope.request.intent.slots.phrase.value;
+    let phrase = handlerInput.requestEnvelope.request.intent.slots.phrase.value;
     const devId = handlerInput.requestEnvelope.context.System.device.deviceId;
-    const prefix = require('crypto').createHash('md5').update(devId).digest("hex").toString();
+    const prefix = handlerInput.attributesManager.getSessionAttributes().CHILDNAME;//require('crypto').createHash('md5').update(devId).digest("hex").toString();
     var translation = '';
 
-    attributesManager.setSessionAttributes(sessionAttributes);
+    attributesManager.setSessionAttributes(persistanceAttributes);
 
-    if (!sessionAttributes.targetLanguage) {
-      console.log(sessionAttributes.targetLanguage);
-      sessionAttributes.targetLanguage = 'ru';
+    if (!persistanceAttributes.targetLanguage) {
+      console.log(persistanceAttributes.targetLanguage);
+      persistanceAttributes.targetLanguage = 'ru';
     }
-
+      let fromName = sessionAttributes.name;
+      let toName = sessionAttributes.CHILDNAME;
+      let responseCode = "AllOK";
     //TODO the api call
-      
+      const apiFetchedQuestion = await Promise.resolve(apiservice.getCleanTranslation(phrase, fromName, toName)).then((response) => {
+          console.error("*****************SUCCESS Calling Question Api ***************** " + response);
 
-    return new Promise((resolve) => {
+          responseCode = response.code;
+          phrase = response.message;
+          phrase = phrase.replace("*", "beep");
+          console.error("*****************SUCCESS Calling phrase ***************** " + phrase);
 
-      doTranslate(phrase, sessionAttributes.targetLanguage)
-      .then((data) => {
-        translation = data;
-        doSynthesize(data, voices[sessionAttributes.targetLanguage])
-        .then((data) => {
-          writeToS3(data,prefix)
-          .then(() => {
-              console.log(prefix);
-              resolve(handlerInput.responseBuilder
-              .speak(`This is how phrase ${phrase} will sound in ${languages[sessionAttributes.targetLanguage]}:\
-              <audio src="https://s3.amazonaws.com/${process.env.BUCKET}/${prefix}/speech.mp3"/>\
-              Say "repeat" to listen again, or ask something else to get a new translation`)
-              .reprompt('Say "repeat" to listen again, or ask something else to get a new translation')
-              .withStandardCard(
-              'Language Teacher',
-              `Original phrase: ${phrase}\nTranslation in ${languages[sessionAttributes.targetLanguage]}: ${translation}`,
-              card_small,
-              card_big)
-              .getResponse());
-          });
-        });
+      }).catch((error) => {
+          console.error("*****************ERROR Calling Question Api ***************** " + error);
+          //Game.askQuestion(handlerInput, false, ctx.t('QUESTIONS'));
       });
 
-    });
+      if(responseCode === "AllOK") {
+          console.error("*****************SUCCESS Calling responseCode ***************** " + responseCode);
+          return new Promise((resolve) => {
+              doTranslate(phrase, persistanceAttributes.targetLanguage)
+                  .then((data) => {
+                      translation = data;
+                      doSynthesize(data, voices[persistanceAttributes.targetLanguage])
+                          .then((data) => {
+                              writeToS3(data,prefix)
+                                  .then(() => {
+                                      console.log(prefix);
+                                      resolve(handlerInput.responseBuilder
+                                          .speak(`This is how phrase ${phrase} will sound in ${languages[persistanceAttributes.targetLanguage]}:\
+                        <audio src="https://s3.amazonaws.com/${process.env.BUCKET}/${prefix}/speech.mp3"/>`)
+                                          .withStandardCard(
+                                              'Compassion App',
+                                              `Original phrase: ${phrase}\nTranslation in ${languages[persistanceAttributes.targetLanguage]}: ${translation}`,
+                                              card_small,
+                                              card_big)
+                                          .getResponse());
+                                  });
+
+                          });
+                  });
+
+          });
+      } else {
+          return handlerInput.responseBuilder
+              .speak(`${phrase} . Exiting now`)
+              .withShouldEndSession(true)
+              .getResponse()
+      }
   },
 };
 
@@ -418,7 +509,7 @@ const RepeatIntentHandler = {
   },
   async handle(handlerInput) {
     const devId = handlerInput.requestEnvelope.context.System.device.deviceId;
-    const prefix = require('crypto').createHash('md5').update(devId).digest("hex").toString();
+    const prefix = await handlerInput.attributesManager.getSessionAttributes().CHILDNAME;//require('crypto').createHash('md5').update(devId).digest("hex").toString();
 
      return new Promise((resolve, reject) => {
 
@@ -449,6 +540,28 @@ const RepeatIntentHandler = {
 
 const skillBuilder = alexa.SkillBuilders.standard();
 
+const RequestLog = {
+    async process(handlerInput) {
+        console.log(`REQUEST ENVELOPE = ${JSON.stringify(handlerInput.requestEnvelope)}`);
+        let {
+            attributesManager,
+            requestEnvelope
+        } = handlerInput;
+        let ctx = attributesManager.getRequestAttributes();
+        const localizationClient = i18n.init({
+            lng: handlerInput.requestEnvelope.request.locale,
+            resources: messages,
+            returnObjects: true,
+            fallbackLng: 'en'
+        });
+        ctx.t = function (...args) {
+            return localizationClient.t(...args);
+        };
+        // return;
+    },
+};
+
+
 exports.handler = skillBuilder
   .addRequestHandlers(
     AskIntentHandler,
@@ -458,11 +571,13 @@ exports.handler = skillBuilder
       ListenMessageIntent,
       SendMessageIntent,
       NameIntent,
+      YesIntent,
     HelpIntent,
     CancelIntent,
     UnhandledIntent,
     SessionEndedRequestHandler
   )
+  // .addRequestInterceptors(RequestLog)
   .withTableName(`${process.env.TABLE}`)
   .withAutoCreateTable(true)
   .lambda();

@@ -2,6 +2,7 @@ from flask import Flask, request, jsonify, abort
 import logging
 import boto3
 import json
+import re
 
 app = Flask(__name__)
 from profanityfilter import ProfanityFilter
@@ -10,20 +11,22 @@ pf = ProfanityFilter()
 
 @app.route('/get_profinity', methods=['POST'])
 def getText():
-    print "request is ", request.data
+    print "request is ", request.get_json()
     data = request.get_json()
     print("data i got is ", data)
+    data = json.loads(data)
+    print type(data)
     text = data['text']
     profined  = pf.censor(text)
     counter = 0
     code = "AllOK"
     for words in profined.split(' '):
-        print words
+        data = words
         if '*' in words:
             print "found it"
             counter = counter + 1
-       
-        if 'Marry' in words:
+            
+        if 'marry' in words.lower():
             print "found Marryi"
             code =  "M400"
     if counter >2:
@@ -32,7 +35,8 @@ def getText():
        send_sns(data)
        profined = "Our content moderation has flagged you message. Your message won't be delivered"
     retdict = {}
-    retdict['text'] = profined
+    profined = re.sub(r"(\*+)", "beep", profined)
+    retdict['message'] = profined
     retdict['count'] = counter
     retdict['code'] = code
     return jsonify(retdict)

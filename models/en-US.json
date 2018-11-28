@@ -29,7 +29,7 @@
                    ],
                    "samples": [
                        "In the name of the lord {phrase}",
-                       "Jesus loves you {phrase}",
+                       "Hello {phrase}",
                        "to say {phrase} ",
                        "to translate {phrase} ",
                        "ask how to say {phrase} ",
@@ -69,14 +69,14 @@
                    "name": "SendMessageIntent",
                    "slots": [
                        {
-                           "name": "child",
+                           "name": "childName",
                            "type": "AMAZON.US_FIRST_NAME"
                        }
                    ],
                    "samples": [
-                       "i want to talk to {child}",
+                       "i want to talk to {childName}",
                        "send message",
-                       "send message to {child}"
+                       "send message to {childName}"
                    ]
                },
                {
@@ -103,6 +103,19 @@
                {
                    "name": "AMAZON.NoIntent",
                    "samples": []
+               },
+               {
+                   "name": "NameIntent",
+                   "slots": [
+                       {
+                           "name": "username",
+                           "type": "AMAZON.US_FIRST_NAME"
+                       }
+                   ],
+                   "samples": [
+                       "{username}",
+                       "my name is {username}"
+                   ]
                }
            ],
            "types": [
@@ -143,6 +156,12 @@
                            "id": "de",
                            "name": {
                                "value": "German"
+                           }
+                       },
+                       {
+                           "id": "en",
+                           "name": {
+                               "value": "English"
                            }
                        },
                        {
