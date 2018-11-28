@@ -1,0 +1,9 @@
+- The app needs a full security review.
+- The app needs a robust identity layer. In our MVP, there is no authentication/authorization.
+-- This will be a non-trivial task given the userbase. Sponsor authentication should be straightforward given the 1-to-1 between device and sponsor. The children will be more difficult given the many-to-one relationship between child and device.
+-- The hackathon team strongly recommends investigation into DeepLens to help with the stretch goal of protected live-ish video translation and the challenges surrounding authentication for use of the app, especially for the children. Compassion should have sufficient training data (photos of the children tied to Names and unique IDs) to train DeepLens to recognize their children. We timeboxed initial investigation into this at 2 hours and did not come up with a meaningful contribution, so we redirected effort to focus on the MVP.
+- The Lambda-based interaction service should scale relatively well, however the EC2-based moderation service should be converted to Lambda/API Gateway or adapted for deployment on ECS/EKS/Fargate.
+- The child/sponsor pairing we have stored in DynamoDB should be pulled from Compassion's existing system.
+- At conclusion of retrieving messages, we recommend immediately kicking off the send message conversational flow. This will improve usability.
+- In addition to the SNS-based notification, a log of all interaction should be stored for administrators to review if necessary.
+- Currently, the play-my-messages functionality plays your last recieved message. We recommend storing additional metadata on messages in DynamoDB to allow for a persistent inbox of messages for each child.
